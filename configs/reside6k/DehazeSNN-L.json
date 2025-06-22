@@ -1,0 +1,19 @@
+{
+    "batch_size": 4,
+    "patch_size": 256,
+    "valid_mode": "valid",
+    "edge_decay": 0,
+    "only_h_flip": true,
+    "epochs": 1500,
+    "eval_freq": 1,
+    "TRAIN_OPTIMIZER_EPS": 1e-8,
+    "TRAIN_OPTIMIZER_BETAS" : "(0.9, 0.999)",
+    "TRAIN_BASE_LR" : 1e-4,
+    "TRAIN_WEIGHT_DECAY" : 0.05,
+    "TRAIN_WARMUP_EPOCHS" : 20,
+    "TRAIN_LR_SCHEDULER" : "cosine",
+    "TRAIN_MIN_LR": 1e-6,
+    "TRAIN_WARMUP_LR" : 5e-7,
+    "TRAIN_LIF_LR" : 5e-5,
+    "LIF_WEIGHT_DECAY": 0.0
+}

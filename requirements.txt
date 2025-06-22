@@ -1,0 +1,13 @@
+PyYAML 
+timm
+tqdm
+opencv-python
+cupy-cuda12x
+lpips
+pytorch_msssim
+torch
+torchvision
+torchaudio
+
+
+                         
