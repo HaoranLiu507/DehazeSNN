@@ -90,7 +90,7 @@ python train.py --model (model name) --exp (exp name) --gpu (gpu id) --output (o
 For example, we train the DehazeSNN-M on the SOTS indoor set:
 
 ```sh
-python train.py -model DehazeSNN-M --exp indoor --gpu 2 --output ./output/ --data_dir ./datasets/ --dataset indoor --save_dir ./saved_models/ --resume false
+python train.py --model DehazeSNN-M --exp indoor --gpu 2 --output ./output/ --data_dir ./datasets/ --dataset indoor --save_dir ./saved_models/ --resume false
 ```
 
 ### Test
