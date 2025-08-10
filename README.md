@@ -1,115 +1,182 @@
 # DehazeSNN
 
-> **Abstract:** 
-Image dehazing is a critical challenge in computer vision, essential for enhancing image clarity in hazy conditions. 
-Traditional methods often rely on atmospheric scattering models, while recent deep learning techniques, specifically 
-Convolutional Neural Networks (CNNs) and Transformers, have improved performance by effectively analyzing image 
-features. However, CNNs struggle with long-range dependencies, and Transformers demand significant computational 
-resources. To address these limitations, we propose DehazeSNN, an innovative architecture that integrates a U-Net-like 
-design with Spiking Neural Networks (SNNs). DehazeSNN captures multi-scale image features while efficiently managing
-local and long-range dependencies. The introduction of the Orthogonal Leaky-Integrate-and-Fire Block (OLIFBlock) 
-enhances cross-channel communication, resulting in superior dehazing performance with reduced computational burden. 
-Our extensive experiments show that DehazeSNN is highly competitive to state-of-the-art methods on benchmark datasets,
-delivering high-quality haze-free images with a smaller model size and less multiply-accumulate operations.
+> Spiking-UNet for image dehazing with Orthogonal Leaky-Integrate-and-Fire (OLIF) blocks.
 
-## Overview
+## Abstract
+Image dehazing enhances image clarity under haze. Conventional methods rely on atmospheric models; recent CNNs and Transformers improve results but either miss long-range dependencies (CNNs) or are compute-heavy (Transformers). DehazeSNN integrates a U-Net-like design with Spiking Neural Networks (SNNs), using an Orthogonal Leaky-Integrate-and-Fire Block (OLIFBlock) to strengthen cross-channel communication. This yields competitive dehazing with fewer parameters and MACs.
 
-This repository presents **DehazeSNN**, a novel image dehazing architecture that combines U-Net-like design with Spiking Neural Networks (SNNs) to achieve superior dehazing performance while maintaining computational efficiency. Our approach addresses the limitations of traditional CNNs and Transformers by introducing the Orthogonal Leaky-Integrate-and-Fire Block (OLIFBlock) for enhanced cross-channel communication.
+## Highlights
+- **Spiking + U-Net**: U-Net-like encoder–decoder with SNN-based processing.
+- **OLIFBlock**: Efficient cross-channel communication.
+- **Multi-scale features**: Handles local and long-range dependencies.
+- **Efficient**: Smaller model size and MACs with strong quality.
+- **Models**: `DehazeSNN-S`, `DehazeSNN-M`, `DehazeSNN-L`.
 
-### Key Features
-- **Efficient Architecture**: U-Net-like design with SNN integration for optimal feature extraction
-- **OLIFBlock**: Novel orthogonal mechanism for improved cross-channel communication
-- **Multi-scale Processing**: Effective handling of both local and long-range dependencies
-- **Computational Efficiency**: Reduced model size and multiply-accumulate operations
-- **State-of-the-art Performance**: Competitive results on benchmark datasets
-
-## Demo Results
-
+## Demos
 ![](demo1.jpg)
 ![](demo2.jpg)
 
+---
 
+## Installation
+Tested with PyTorch 2.1.2, CUDA 12.1, cuDNN 8.9, Python 3.11, NVIDIA GPU.
 
+Important: The custom LIF CUDA kernel depends on CuPy for CUDA 12.x (`cupy-cuda12x`). CPU-only is not supported.
 
-
-## Preparation
-
-### Install
-
-We test the code on PyTorch 2.1.2 + CUDA 12.1 + cuDNN 8.9.0.2
-
-1. Create a new conda environment
-```
-conda create -n DehazeSNN python=3.11.7
+### 1) Create environment
+```bash
+conda create -n DehazeSNN python=3.11.7 -y
 conda activate DehazeSNN
 ```
 
-2. Install dependencies
+### 2) Install PyTorch (CUDA 12.1)
+Recommended (Conda):
+```bash
+conda install pytorch=2.1.2 torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia -y
 ```
-conda install pytorch=2.1.2 torchvision torchaudio cudatoolkit=11.3 -c pytorch
+Alternative (pip):
+```bash
+pip install --index-url https://download.pytorch.org/whl/cu121 torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2
+```
+
+### 3) Install Python dependencies
+If you installed PyTorch via Conda, install the remaining packages via pip:
+```bash
+pip install PyYAML timm tqdm opencv-python cupy-cuda12x lpips pytorch_msssim
+```
+Or use the provided requirements (note: it also lists torch/vision/audio):
+```bash
 pip install -r requirements.txt
 ```
 
-### Download
+### 4) Prepare logging directory
+Both training and testing write logs under `--output/log`. Create it once before running:
 
-You can download the pretrained models and results on  [Zenodo](https://doi.org/10.5281/zenodo.15486831).
+- Linux/macOS: `mkdir -p ./output/log`
+- PowerShell: `New-Item -ItemType Directory -Force .\output\log`
 
-The datasets are available for download at [RESIDE](https://sites.google.com/view/reside-dehaze-datasets/reside-standard?authuser=3D0) and [RE-HAZE](https://github.com/IDKiro/DehazeFormer).
+---
 
-The final file path should be the same as the following:
+## Data and Checkpoints
+- Pretrained models and example results: [Zenodo](https://doi.org/10.5281/zenodo.15486831)
+- Datasets: [RESIDE](https://sites.google.com/view/reside-dehaze-datasets/reside-standard?authuser=0), [RE-HAZE (RS-HAZE)](https://github.com/IDKiro/DehazeFormer)
 
+Expected layout:
+```text
+saved_models/
+  ├─ indoor/
+  │   ├─ DehazeSNN-M_best.pth
+  │   └─ ...
+  ├─ outdoor/
+  ├─ reside6k/
+  └─ rshaze/
+
+datasets/
+  ├─ indoor/
+  │  ├─ train/
+  │  │  ├─ GT/      # clean images
+  │  │  └─ hazy/    # corresponding hazy images
+  │  └─ test/
+  │     ├─ GT/
+  │     └─ hazy/
+  ├─ outdoor/
+  ├─ reside6k/
+  └─ rshaze/
 ```
-┬─ saved_models
-│   ├─ indoor
-│   │   ├─ DehazeSNN-M_best.pth
-│   │   └─ ... (model name)
-│   └─ ... (dataset name)
-└─ datasets
-    ├─ indoor
-    │   ├─ train
-    │   │   ├─ GT
-    │   │   │   └─ ... (image filename)
-    │   │   └─ hazy
-    │   │       └─ ... (corresponds to the former)
-    │   └─ test
-    │       └─ ...
-    └─ ... (dataset name)
+- The dataloader expects paired files with identical names under `GT/` and `hazy/`.
+
+---
+
+## Quick Start
+Evaluate a pretrained model (example: RS-HAZE with `DehazeSNN-M`):
+```bash
+python test.py \
+  --model DehazeSNN-M \
+  --exp rshaze \
+  --dataset rshaze \
+  --data_dir ./datasets/ \
+  --save_dir ./saved_models/ \
+  --result_dir ./output/results/ \
+  --gpu 0
+```
+Images are saved to `output/results/<dataset>/<model>/imgs/` and metrics to `output/results/<dataset>/<model>/results.csv`.
+
+Evaluate the last 20 saved epochs as well:
+```bash
+python test.py --model DehazeSNN-M --exp rshaze --dataset rshaze --last_20 true --gpu 0
 ```
 
-## Training and Evaluation
+---
 
-### Train
+## Training
+Choose an experiment config from `configs/<exp>/` and a model size.
 
-You can modify the training settings for each experiment in the `configs` folder.
-Then run the following script to train the model:
+Common options:
+- `--model`: `DehazeSNN-S | DehazeSNN-M | DehazeSNN-L`
+- `--exp`: `indoor | outdoor | reside6k | rshaze` (must match a folder in `configs/`; on Linux/macOS, `--exp` must match `configs/<exp>/` exactly)
+- `--dataset`: dataset folder name under `datasets/` (usually same as `--exp`)
+- `--gpu`: GPU ids, e.g., `"0"` or `"0,1"`
+- `--resume`: `true|false` (resume from `_current.pth`)
+- `--fine_tuning`: `true|false` (adjusts lrs/epochs for fine-tuning)
+- `--loss`: `L1 | LPIPS | weight` (if `weight`, set `--weight 0.5` etc.)
+- `--accumulation_steps`: gradient accumulation for large images
 
-```sh
-python train.py --model (model name) --exp (exp name) --gpu (gpu id) --output (output path) --data_dir (data directory) --dataset (dataset name) --save_dir (save directory) --resume (true/false)
+Example (train `DehazeSNN-M` on RESIDE-6K):
+```bash
+python train.py \
+  --model DehazeSNN-M \
+  --exp reside6k \
+  --dataset reside6k \
+  --data_dir ./datasets/ \
+  --save_dir ./saved_models/ \
+  --output ./output/ \
+  --gpu 0 \
+  --resume false
 ```
-
-For example, we train the DehazeSNN-M on the SOTS indoor set:
-
-```sh
-python train.py --model DehazeSNN-M --exp indoor --gpu 2 --output ./output/ --data_dir ./datasets/ --dataset indoor --save_dir ./saved_models/ --resume false
+Example (SOTS-Indoor):
+```bash
+python train.py --model DehazeSNN-M --exp indoor --dataset indoor --gpu 0
 ```
+Checkpoints are saved to `saved_models/<exp>/` as `_best.pth`, `_current.pth`, `_last.pth`, and optional `_epoch_XXX.pth` (last ~20 epochs).
 
-### Test
+Note on configs for `DehazeSNN-S`: add `configs/<exp>/DehazeSNN-S.json` (copy and adapt from `DehazeSNN-M.json`), otherwise training will not find the config.
 
-Run the following script to test the trained model:
+---
 
-```sh
-python test.py --model (model name) --exp (exp name) --gpu (gpu id) --output (output path) --data_dir (data directory) --dataset (dataset name) --save_dir (save directory)
-```
+## Configuration Reference
+Each JSON in `configs/<exp>/` controls training:
+- `batch_size`: global batch size
+- `patch_size`: crop size during training/validation
+- `valid_mode`: `valid` uses centered crops; `test` runs full-size
+- `edge_decay`, `only_h_flip`: augmentation knobs
+- `epochs`, `eval_freq`: total epochs and validation frequency
+- Optimizer and schedule:
+  - `TRAIN_BASE_LR`, `TRAIN_LIF_LR`, `TRAIN_WEIGHT_DECAY`, `LIF_WEIGHT_DECAY`
+  - `TRAIN_WARMUP_EPOCHS`, `TRAIN_LR_SCHEDULER` (cosine), `TRAIN_MIN_LR`, `TRAIN_WARMUP_LR`
+  - `TRAIN_OPTIMIZER_EPS`, `TRAIN_OPTIMIZER_BETAS`
 
-For example, we test the DehazeSNN-M on the RS-HAZE set:
+Model hyperparameters (e.g., depths, dims) are defined in code under `models/` per size S/M/L.
 
-```sh
-python test.py --model DehazeSNN-M --exp rshaze --gpu 2 --output ./output/ --data_dir ./datasets/ --dataset rshaze --save_dir ./saved_models/ 
-```
+---
 
-## Acknowledgement
+## Single-image Inference (optional)
+If you have a paired test set, use `test.py`. For ad‑hoc single images, you can adapt `test.py` or write a short script to:
+1) Load the model and checkpoint, 2) read an RGB image, scale to `[−1,1]`, 3) forward, 4) clamp and rescale to `[0,1]`, 5) save. See utilities in `utils/common.py` (`read_img`, `write_img`).
 
-This repository is built upon the CUDA C++ kernel implementation from the following paper:
+---
+
+## Troubleshooting
+- "No module named cupy" or CUDA errors: install `cupy-cuda12x` matching your CUDA and Python. Ensure an NVIDIA driver supporting CUDA 12.1 is installed.
+- PyTorch/CUDA mismatch: verify PyTorch was installed with CUDA 12.1 (Conda: `pytorch-cuda=12.1`; pip: `cu121` wheels).
+- OOM during training: reduce `batch_size`, increase `--accumulation_steps`, lower `patch_size`.
+- Dataloader file errors: ensure paired filenames under `GT/` and `hazy/` are identical.
+- Multi-GPU: pass `--gpu "0,1,..."`. Training uses `nn.DataParallel`.
+- Logger path: ensure `--output` exists and contains a `log/` subfolder (e.g., on Windows PowerShell: `New-Item -ItemType Directory -Force .\output\log`).
+
+---
+
+## Acknowledgements
+This repo builds on the CUDA C++ kernel implementation from the following paper:
 ```bibtex
 @inproceedings{li2022brain,
   title={Brain-inspired multilayer perceptron with spiking neurons},
@@ -120,18 +187,16 @@ This repository is built upon the CUDA C++ kernel implementation from the follow
 }
 ```
 
-
-## Notes
-
-Send email to liuhaoran@cdut.edu.cn if you have critical issues to be addressed.
-
-
-
-
 ## Citation
-
-If you find this work useful for your research, please cite our paper:
-
+If you find this work useful, please cite our paper (to be updated):
 ```bibtex
-
+% TODO: add once available
 ```
+
+## License
+This project is released under the terms of the license in `LICENSE`.
+
+## Contact
+For issues and questions: liuhaoran@cdut.edu.cn
+
+
