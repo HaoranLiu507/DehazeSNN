@@ -188,7 +188,7 @@ This repo builds on the CUDA C++ kernel implementation from the following paper:
 ```
 
 ## Citation
-If you find this work useful, please cite our paper (to be updated):
+If you find this work useful, please cite our paper:
 ```bibtex
 @INPROCEEDINGS{11228727,
   author={Li, Huibin and Liu, Haoran and Liu, Mingzhe and Xiao, Yulong and Li, Peng and Zan, Guibin},
