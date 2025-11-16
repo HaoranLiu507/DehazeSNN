@@ -190,7 +190,16 @@ This repo builds on the CUDA C++ kernel implementation from the following paper:
 ## Citation
 If you find this work useful, please cite our paper (to be updated):
 ```bibtex
-% TODO: add once available
+@INPROCEEDINGS{11228727,
+  author={Li, Huibin and Liu, Haoran and Liu, Mingzhe and Xiao, Yulong and Li, Peng and Zan, Guibin},
+  booktitle={2025 International Joint Conference on Neural Networks (IJCNN)}, 
+  title={U-Net-Like Spiking Neural Networks for Single Image Dehazing}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={1-9},
+  keywords={Photography;Image dehazing;Computational modeling;Atmospheric modeling;Scattering;Spiking neural networks;Computer architecture;Transformers;Feature extraction;Remote sensing;Image Dehazing;Leaky-Integrate-and-Fire;Remote Sensing;Spiking Neural Networks},
+  doi={10.1109/IJCNN64981.2025.11228727}}
 ```
 
 ## License
