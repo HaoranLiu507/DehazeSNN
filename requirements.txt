@@ -1,4 +1,4 @@
-PyYAML 
+PyYAML
 timm
 tqdm
 opencv-python
@@ -8,6 +8,5 @@ pytorch_msssim
 torch
 torchvision
 torchaudio
-
-
-                         
+huggingface_hub
+safetensors

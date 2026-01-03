@@ -10,7 +10,8 @@ Image dehazing enhances image clarity under haze. Conventional methods rely on a
 - **OLIFBlock**: Efficient cross-channel communication.
 - **Multi-scale features**: Handles local and long-range dependencies.
 - **Efficient**: Smaller model size and MACs with strong quality.
-- **Models**: `DehazeSNN-S`, `DehazeSNN-M`, `DehazeSNN-L`.
+- **Models**: `DehazeSNN-M` (2.70M params), `DehazeSNN-L` (4.75M params).
+- **Hugging Face Hub**: Pretrained checkpoints available at [FengShaner/DehazeSNN](https://huggingface.co/FengShaner/DehazeSNN).
 
 ## Demos
 ![](demo1.jpg)
@@ -87,8 +88,48 @@ datasets/
 
 ---
 
-## Quick Start
-Evaluate a pretrained model (example: RS-HAZE with `DehazeSNN-M`):
+## Quick Start (Hugging Face Hub)
+
+The easiest way to try DehazeSNN is using our pretrained models from Hugging Face Hub:
+
+```bash
+python quickstart.py --dataset reside6k --revision l-reside-6k
+```
+
+This loads **DehazeSNN-L (RESIDE-6k)** and runs inference on your local dataset.
+
+### Available Checkpoints
+
+| Revision | Size | Dataset | Command |
+|----------|------|---------|---------|
+| `main` | L | RESIDE-ITS | `python quickstart.py --revision main` |
+| `l-reside-its` | L | RESIDE-ITS | `python quickstart.py --revision l-reside-its` |
+| `l-reside-ots` | L | RESIDE-OTS | `python quickstart.py --revision l-reside-ots` |
+| `l-reside-6k` | L | RESIDE-6k | `python quickstart.py --revision l-reside-6k` |
+| `l-rs-haze` | L | RS-Haze | `python quickstart.py --revision l-rs-haze` |
+| `m-reside-its` | M | RESIDE-ITS | `python quickstart.py --revision m-reside-its` |
+| `m-reside-6k` | M | RESIDE-6k | `python quickstart.py --revision m-reside-6k` |
+| `m-rs-haze` | M | RS-Haze | `python quickstart.py --revision m-rs-haze` |
+
+### Load Model in Your Code
+
+```python
+from models.hub import DehazeSNNHub
+
+# Load default model (DehazeSNN-L trained on RESIDE-ITS)
+model = DehazeSNNHub.from_pretrained("FengShaner/DehazeSNN")
+model.cuda().eval()
+
+# Load a different variant
+model = DehazeSNNHub.from_pretrained("FengShaner/DehazeSNN", revision="m-reside-6k")
+```
+
+---
+
+## Testing with Local Checkpoints
+
+If you have local checkpoints (e.g., from training or [Zenodo](https://doi.org/10.5281/zenodo.15486831)):
+
 ```bash
 python test.py \
   --model DehazeSNN-M \
@@ -112,7 +153,7 @@ python test.py --model DehazeSNN-M --exp rshaze --dataset rshaze --last_20 true 
 Choose an experiment config from `configs/<exp>/` and a model size.
 
 Common options:
-- `--model`: `DehazeSNN-S | DehazeSNN-M | DehazeSNN-L`
+- `--model`: `DehazeSNN-M | DehazeSNN-L`
 - `--exp`: `indoor | outdoor | reside6k | rshaze` (must match a folder in `configs/`; on Linux/macOS, `--exp` must match `configs/<exp>/` exactly)
 - `--dataset`: dataset folder name under `datasets/` (usually same as `--exp`)
 - `--gpu`: GPU ids, e.g., `"0"` or `"0,1"`
@@ -139,8 +180,6 @@ python train.py --model DehazeSNN-M --exp indoor --dataset indoor --gpu 0
 ```
 Checkpoints are saved to `saved_models/<exp>/` as `_best.pth`, `_current.pth`, `_last.pth`, and optional `_epoch_XXX.pth` (last ~20 epochs).
 
-Note on configs for `DehazeSNN-S`: add `configs/<exp>/DehazeSNN-S.json` (copy and adapt from `DehazeSNN-M.json`), otherwise training will not find the config.
-
 ---
 
 ## Configuration Reference
@@ -159,9 +198,38 @@ Model hyperparameters (e.g., depths, dims) are defined in code under `models/` p
 
 ---
 
-## Single-image Inference (optional)
-If you have a paired test set, use `test.py`. For ad‑hoc single images, you can adapt `test.py` or write a short script to:
-1) Load the model and checkpoint, 2) read an RGB image, scale to `[−1,1]`, 3) forward, 4) clamp and rescale to `[0,1]`, 5) save. See utilities in `utils/common.py` (`read_img`, `write_img`).
+## Single-image Inference
+
+For single images without ground truth:
+
+```python
+import torch
+from PIL import Image
+import numpy as np
+from models.hub import DehazeSNNHub
+
+# Load model from Hugging Face Hub
+model = DehazeSNNHub.from_pretrained("FengShaner/DehazeSNN")
+model.cuda().eval()
+
+# Load and preprocess image
+img = Image.open("hazy_image.jpg").convert("RGB")
+img_np = np.array(img).astype(np.float32) / 255.0
+img_tensor = torch.from_numpy(img_np).permute(2, 0, 1).unsqueeze(0)
+img_tensor = (img_tensor - 0.5) / 0.5  # normalize to [-1, 1]
+img_tensor = img_tensor.cuda()
+
+# Inference
+with torch.no_grad():
+    output = model(img_tensor).clamp(-1, 1)
+
+# Save result
+output = (output * 0.5 + 0.5).squeeze(0).permute(1, 2, 0).cpu().numpy()
+output = (output * 255).astype(np.uint8)
+Image.fromarray(output).save("dehazed_image.jpg")
+```
+
+See also utilities in `utils/common.py` (`read_img`, `write_img`).
 
 ---
 

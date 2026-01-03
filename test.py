@@ -47,8 +47,12 @@ def create_logger(output_dir, name=''):
     console_handler.setFormatter(logging.Formatter(fmt, datefmt='%Y-%m-%d %H:%M:%S'))
     logger.addHandler(console_handler)
 
+    # create log directory if it doesn't exist
+    log_dir = os.path.join(output_dir, 'log')
+    os.makedirs(log_dir, exist_ok=True)
+    
     # create file handler
-    file_handler = logging.FileHandler(os.path.join(output_dir + '/log/', 'log.txt'), mode='a')
+    file_handler = logging.FileHandler(os.path.join(log_dir, 'log.txt'), mode='a')
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter(fmt, datefmt='%Y-%m-%d %H:%M:%S'))
     logger.addHandler(file_handler)
@@ -169,12 +173,14 @@ if __name__ == '__main__':
 
     # Define the directory where test results will be saved
     result_dir_1 = os.path.join(args.result_dir, args.dataset, args.model)
+    # Create result directory if it doesn't exist
+    os.makedirs(result_dir_1, exist_ok=True)
 
     # Run the test function to evaluate the model on the test set
     avg_psnr, avg_ssim = test(test_loader, model, result_dir_1)
 
     # Save the best model's test results to a CSV file
-    os.makedirs(os.path.join(result_dir_1), exist_ok=True)
+    # (result_dir_1 is already created above)
     with open(os.path.join(result_dir_1, 'allTest.csv'), 'a') as f1_result:
         f1_result.write(f'best,%.02f,%.04f\n' % (avg_psnr, avg_ssim))
 
@@ -191,6 +197,8 @@ if __name__ == '__main__':
                 logger.info(f'==> No existing {saved_model_dir}')
                 continue
             result_dir = os.path.join(args.result_dir, args.dataset, args.model, str(i))
+            # Create result directory if it doesn't exist
+            os.makedirs(result_dir, exist_ok=True)
             logger.info('==> Start testing, current model path: ' + saved_model_dir)
             avg_psnr, avg_ssim = test(test_loader, model, result_dir)
 
